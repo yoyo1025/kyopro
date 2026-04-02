@@ -1,44 +1,101 @@
 package main
 
-import "fmt"
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
 
 func main() {
-	var num float64
-	_, err := fmt.Scan(&num)
-	if err != nil {
-		fmt.Println("エラー: ", err)
-		return
+	in := bufio.NewReader(os.Stdin)
+
+	var n, k int
+	fmt.Fscan(in, &n, &k)
+
+	b := make([][]int, n)
+	for i := 0; i < n; i++ {
+		b[i] = make([]int, n)
+		for j := 0; j < n; j++ {
+			fmt.Fscan(in, &b[i][j])
+		}
 	}
 
-	// 求める実数Xの範囲が0以上100以下である
-	var left float64 = 0
-	var right float64 = 100
-	var mid float64 = (left + right) / 2
+	// 呼ばれた数字を記録
+	called := make(map[int]bool)
+	for i := 0; i < k; i++ {
+		var x int
+		fmt.Fscan(in, &x)
+		called[x] = true
+	}
 
-	// 許容誤差
-	var tolerance float64 = 0.01
+	// マスを埋める
+	marked := make([][]bool, n)
+	for i := 0; i < n; i++ {
+		marked[i] = make([]bool, n)
+		for j := 0; j < n; j++ {
+			if called[b[i][j]] {
+				marked[i][j] = true
+			}
+		}
+	}
+	if n%2 == 1 {
+		mid := n / 2
+		marked[mid][mid] = true
+	}
 
-	// 探索開始
-	for {
-		result := calcResult(mid)
-		// 誤差が+-0.01までは許容
-		if (num-tolerance) <= result && result <= (num+tolerance) {
-			fmt.Println(mid)
+	ans := 0
+
+	// 各行を判定
+	for i := 0; i < n; i++ {
+		ok := true
+		for j := 0; j < n; j++ {
+			if !marked[i][j] {
+				ok = false
+				break
+			}
+		}
+		if ok {
+			ans++
+		}
+	}
+
+	// 各列を判定
+	for j := 0; j < n; j++ {
+		ok := true
+		for i := 0; i < n; i++ {
+			if !marked[i][j] {
+				ok = false
+				break
+			}
+		}
+		if ok {
+			ans++
+		}
+	}
+
+	// 左上 → 右下
+	ok := true
+	for i := 0; i < n; i++ {
+		if !marked[i][i] {
+			ok = false
 			break
 		}
-		// num より result が小さい場合は x を大きくする必要があるので left = mid
-		if result < num {
-			left = mid
-		}
-		// num より result が大きい場合は x を小さくする必要があるので right = mid
-		if result > num {
-			right = mid
-		}
-		mid = (left + right) / 2
 	}
-}
+	if ok {
+		ans++
+	}
 
-// 条件式の左辺
-func calcResult(x float64) float64 {
-	return x*(x*(x+1)+2) + 3
+	// 右上 → 左下
+	ok = true
+	for i := 0; i < n; i++ {
+		if !marked[i][n-1-i] {
+			ok = false
+			break
+		}
+	}
+	if ok {
+		ans++
+	}
+
+	fmt.Println(ans)
 }
